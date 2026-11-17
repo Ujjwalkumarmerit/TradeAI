@@ -1,56 +1,49 @@
-# TrustDesk AI
+# TrustDesk AI — Project Concierge
 
-A cautious customer-support assistant that retrieves policy evidence, cites sources, checks mock order identity, and escalates uncertain or high-risk requests.
+A conservative customer-support prototype that retrieves policy evidence, cites passages, checks mock orders, and escalates uncertain or risky requests.
 
-> **Status:** prototype / evaluation build. Not production-ready. Included knowledge and order records are synthetic fixtures.
-
-## Features
-- Paragraph-level lexical retrieval over versioned Markdown knowledge.
-- Source citations and conservative escalation when evidence is weak.
-- Optional OpenAI-compatible drafting with extractive fallback.
-- Mock order lookup requiring order ID and checkout email.
-- Safe handling for identity mismatch, missing orders, service failures, prompt injection, and high-risk requests.
-- FastAPI API, minimal browser UI, CLI, 40-question evaluation set, and 10 adversarial scenarios.
+## Scope and limitations
+The employer-provided corpus, mock order API contract, sample messages, and surprise updates were not present in the supplied project materials. All included policies, order records, and evaluation prompts are synthetic fixtures. This is not production-ready and has not been tested against employer systems.
 
 ## Quick start
-Python 3.10+ recommended.
-
+Python 3.10+:
 ```bash
 python -m venv .venv
-# Windows: .venv\\Scripts\\activate
-# macOS/Linux: source .venv/bin/activate
-python -m pip install -r requirements.txt
+# Windows: .venv\Scripts\activate
+pip install -r requirements.txt
 uvicorn trustdesk.api:app --reload
 ```
+Open http://127.0.0.1:8000 or /docs.
 
-Open http://127.0.0.1:8000; API docs: http://127.0.0.1:8000/docs.
+## Optional generation
+Set OPENAI_API_KEY and optionally OPENAI_MODEL (default gpt-4o-mini) to enable evidence-constrained drafting. Without a key or if generation fails, the engine returns retrieved evidence. A configured key does not prove live provider access. Order authorization is independent of the LLM.
 
-## Optional LLM
-Set `OPENAI_API_KEY` in your environment to enable optional evidence-constrained drafting. `OPENAI_MODEL` defaults to `gpt-4o-mini`. Without a key, or if the provider call fails, the app falls back to retrieved text. The LLM does not authorize order lookups. Never commit `.env` or credentials.
-
-## CLI
-```bash
-python -m trustdesk.cli "How long do refunds take?"
-python -m trustdesk.cli "Where is order ORD-1001?" --order-id ORD-1001 --email maya@example.com
-```
-
-## Tests and evaluation
+## Commands
 ```bash
 python -m pytest -q
 python -m trustdesk.evaluate
+python scripts/evaluate_adversarial.py
+python scripts/compare_retrieval.py
 ```
 
-Verified against the uploaded source archive on 2026-11-14: **14 automated tests passed**; synthetic decision evaluation **40/40 (100%)**; synthetic retrieval hit@4 **36/36 (100%)**. These are fixture-only results, not real-world accuracy, production readiness, or live LLM verification.
+## Architecture
+- FastAPI exposes health, chat, and a small local web form.
+- KnowledgeBase parses versioned Markdown, excludes superseded documents, and ranks paragraph passages with transparent lexical overlap.
+- SupportEngine applies risk and prompt-injection routing, evidence thresholds, citations, and escalation.
+- MockOrderService requires explicit order ID and checkout email and simulates not-found, mismatch, timeout, and malformed responses.
+- GroundedGenerator is optional; deterministic extractive fallback remains available.
 
-## Architecture and reports
-- [Architecture](docs/ARCHITECTURE.md)
-- [Test report](docs/TEST_REPORT.md)
-- [Known limitations](docs/LIMITATIONS.md)
-- [Screenshots](docs/SCREENSHOTS.md)
-- [Failure log](FAILURES.md)
+## Two-design comparison
+The shipped lexical overlap ranker is compared with an offline BM25 alternative in docs/DESIGN_COMPARISON.md. Both reached 36/36 hit@4 on the same 36 synthetic questions with expected sources. This fixture is too small to establish a general winner; the simpler lexical baseline remains the default.
 
-## Layout
-`trustdesk/` application code; `knowledge/` synthetic policy fixtures; `evaluation/` synthetic question/adversarial sets; `tests/` automated tests; `docs/` project documentation.
+## Submission materials
+- REPORT.md: results, trade-offs, limitations, and AI assistance disclosure.
+- CHECKINS.md: evidence-based reconstruction. The author must enter actual hours from personal records; no hours were inferred.
+- FAILURES.md: attack results and recovery log.
+- docs/WALKTHROUGH.md: prepared six-minute walkthrough script, not a recording.
 
-## Important limitations
-Retrieval is lexical, not semantic. Order identity is a mock email comparison, not authentication. The order service is local mock data. Live LLM generation was not verified. There is no production authentication, authorization service, rate limiting, monitoring, audit pipeline, or deployment hardening. No genuine screenshots were supplied, so none are fabricated.
+## AI assistance disclosure
+AI assistance was used to review/refine code, add evaluation utilities, improve documentation, and prepare the walkthrough script. The project owner should verify this statement and disclose any additional tools used. No missing employer assets were fabricated and no employer system was tested.
+
+## Replace fixtures
+Replace knowledge/ with authorized company policies and replace MockOrderService in trustdesk/orders.py with the actual service adapter. Preserve source authority, authentication, and safe failure behavior. Re-run the frozen evaluation on representative, independently labeled data before making performance claims.
